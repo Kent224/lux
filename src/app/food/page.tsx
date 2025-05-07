@@ -1,89 +1,83 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Lightbox from "yet-another-react-lightbox";
 import "yet-another-react-lightbox/styles.css";
-
-const images = [
-  {
-    src: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80",
-    alt: "Food 1",
-    author: "Brooke Lark",
-    url: "https://unsplash.com/photos/t7wgqkQp9FA",
-  },
-  {
-    src: "https://images.unsplash.com/photo-1464306076886-debca5e8a6b0?auto=format&fit=crop&w=800&q=80",
-    alt: "Food 2",
-    author: "Eaters Collective",
-    url: "https://unsplash.com/photos/12eHC6FxPyg",
-  },
-  {
-    src: "https://images.unsplash.com/photo-1516685018646-5499d0a7d42f?auto=format&fit=crop&w=800&q=80",
-    alt: "Food 3",
-    author: "Joseph Gonzalez",
-    url: "https://unsplash.com/photos/4QKQ8VkoKR8",
-  },
-  {
-    src: "https://images.unsplash.com/photo-1502741338009-cac2772e18bc?auto=format&fit=crop&w=800&q=80",
-    alt: "Food 4",
-    author: "Eiliv Aceron",
-    url: "https://unsplash.com/photos/2Ts5HnA67k8",
-  },
-  {
-    src: "https://images.unsplash.com/photo-1467003909585-2f8a72700288?auto=format&fit=crop&w=800&q=80",
-    alt: "Food 5",
-    author: "Jez Timms",
-    url: "https://unsplash.com/photos/8xznAGy4HcY",
-  },
-];
+import { useImages } from "@/hooks/useImages";
+import Loader from "../components/Loader";
 
 export default function FoodPage() {
   const [open, setOpen] = useState(false);
   const [index, setIndex] = useState(0);
+  const { images, loading, error } = useImages("food");
+  console.log('画面で受け取ったimages:', images);
+  const [imagesLoaded, setImagesLoaded] = useState(0);
+  const [minLoadingDone, setMinLoadingDone] = useState(false);
+
+  useEffect(() => {
+    setImagesLoaded(0);
+  }, [images.length]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setMinLoadingDone(true), 300);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (error) return <div>エラー: {error}</div>;
+  if (images.length === 0 && !loading && minLoadingDone)
+    return (
+      <main className="max-w-5xl mx-auto py-12 px-4 flex items-center justify-center min-h-[60vh]">
+        <div className="text-3xl text-gray-400 font-bold text-center select-none">No photo,</div>
+      </main>
+    );
+
+  const showLoader = loading || !minLoadingDone;
 
   return (
-    <main className="max-w-5xl mx-auto py-12 px-4">
-      <h1 className="text-3xl font-bold mb-8">Food Photography</h1>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-        {images.map((img, i) => (
-          <button
-            key={img.src}
-            className="group relative focus:outline-none"
-            onClick={() => {
-              setIndex(i);
-              setOpen(true);
-            }}
-          >
-            <img
-              src={img.src}
-              alt={img.alt}
-              className="w-full h-60 object-cover rounded shadow hover:scale-105 transition-transform duration-200"
-              loading="lazy"
-            />
-            <span className="absolute bottom-2 left-2 bg-white/80 text-xs px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">
-              Photo by {img.author}
-            </span>
-          </button>
-        ))}
+    <main className="max-w-5xl mx-auto py-12 px-4 relative">
+      {showLoader && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60">
+          <Loader />
+        </div>
+      )}
+      <div style={{ opacity: showLoader ? 0 : 1, transition: "opacity 0.3s" }}>
+        <h1 className="text-3xl font-bold mb-8">Food Photography</h1>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          {images.map((img, i) => (
+            <button
+              key={img.id}
+              className="group relative focus:outline-none fade-in-up"
+              style={{ animationDelay: `${i * 0.12 + 0.08}s` }}
+              onClick={() => {
+                setIndex(i);
+                setOpen(true);
+              }}
+            >
+              <img
+                src={img.url}
+                alt={img.alt}
+                className="w-full h-60 object-cover rounded shadow hover:scale-105 transition-transform duration-200"
+                loading="lazy"
+                onLoad={() => setImagesLoaded((v) => v + 1)}
+                onError={() => setImagesLoaded((v) => v + 1)}
+              />
+              <span className="absolute bottom-2 left-2 bg-white/80 text-xs px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                Photo by {img.author}
+              </span>
+            </button>
+          ))}
+        </div>
+        {images.length === 0 && !showLoader && (
+          <div className="text-3xl text-gray-400 font-bold text-center select-none mt-24">No photo,</div>
+        )}
+        <Lightbox
+          open={open}
+          close={() => setOpen(false)}
+          slides={images.map((img) => ({ src: img.url, alt: img.alt }))}
+          index={index}
+          on={{ view: ({ index }) => setIndex(index) }}
+        />
       </div>
-      <div className="text-xs text-gray-400 mt-6">
-        Photos from Unsplash. クレジット: {" "}
-        {images.map((img, i) => (
-          <span key={img.url}>
-            <a href={img.url} target="_blank" rel="noopener noreferrer" className="underline">
-              {img.author}
-            </a>
-            {i < images.length - 1 && ", "}
-          </span>
-        ))}
-      </div>
-      <Lightbox
-        open={open}
-        close={() => setOpen(false)}
-        slides={images.map((img) => ({ src: img.src, alt: img.alt }))}
-        index={index}
-        on={{ view: ({ index }) => setIndex(index) }}
-      />
     </main>
   );
 } 

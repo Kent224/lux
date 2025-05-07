@@ -35,8 +35,8 @@ export default function RootLayout({
             <ul className="flex gap-8 text-lg font-medium">
               <li><a href="/food" className="nav-underline-link" style={{ color: '#171717', fontWeight: 700, WebkitFontSmoothing: 'antialiased' }}>Food</a></li>
               <li><a href="/interiors" className="nav-underline-link" style={{ color: '#171717', fontWeight: 700, WebkitFontSmoothing: 'antialiased' }}>Interiors</a></li>
-              <li><a href="/social-media" className="nav-underline-link" style={{ color: '#171717', fontWeight: 700, WebkitFontSmoothing: 'antialiased' }}>Social Media</a></li>
-              <li><a href="/reel" className="nav-underline-link" style={{ color: '#171717', fontWeight: 700, WebkitFontSmoothing: 'antialiased' }}>Reel</a></li>
+              <li><a href="/landscape" className="nav-underline-link" style={{ color: '#171717', fontWeight: 700, WebkitFontSmoothing: 'antialiased' }}>Landscape</a></li>
+              <li><a href="/portraits" className="nav-underline-link" style={{ color: '#171717', fontWeight: 700, WebkitFontSmoothing: 'antialiased' }}>Portraits</a></li>
               <li><a href="/contact" className="nav-underline-link" style={{ color: '#171717', fontWeight: 700, WebkitFontSmoothing: 'antialiased' }}>Contact</a></li>
               <li><a href="https://instagram.com/estudio.ampersand" target="_blank" rel="noopener noreferrer" className="nav-underline-link" style={{ color: '#171717', fontWeight: 700, WebkitFontSmoothing: 'antialiased' }}>Instagram</a></li>
             </ul>
@@ -58,8 +58,8 @@ export default function RootLayout({
                 {[
                   { label: "Food", href: "/food" },
                   { label: "Interiors", href: "/interiors" },
-                  { label: "Social Media", href: "/social-media" },
-                  { label: "Reel", href: "/reel" },
+                  { label: "Landscape", href: "/landscape" },
+                  { label: "Portraits", href: "/portraits" },
                   { label: "Contact", href: "/contact" },
                   { label: "Instagram", href: "https://instagram.com/estudio.ampersand", external: true },
                 ].map((item, i) => (

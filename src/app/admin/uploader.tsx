@@ -1,108 +1,110 @@
 "use client";
 import { useState } from "react";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { storage, firestore } from "@/lib/firebase";
+import { collection, addDoc } from "firebase/firestore";
+import { storage, db } from "@/lib/firebase";
 
 const categories = [
   { value: "food", label: "Food" },
   { value: "interiors", label: "Interiors" },
-  { value: "social-media", label: "Social Media" },
-  { value: "reel", label: "Reel" },
+  { value: "landscape", label: "Landscape" },
+  { value: "portraits", label: "Portraits" },
 ];
 
 export default function ImageUploader() {
   const [file, setFile] = useState<File | null>(null);
-  const [category, setCategory] = useState(categories[0].value);
-  const [uploading, setUploading] = useState(false);
-  const [url, setUrl] = useState("");
+  const [category, setCategory] = useState("");
+  const [author, setAuthor] = useState("");
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFile(e.target.files?.[0] || null);
-    setUrl("");
-    setError("");
-    setSuccess("");
-  };
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!file) {
+      setError("ファイルを選択してください");
+      return;
+    }
 
-  const handleUpload = async () => {
-    if (!file) return;
-    setUploading(true);
+    setLoading(true);
     setError("");
-    setSuccess("");
+
     try {
-      console.log("アップロード開始:", file.name);
-      const storageRef = ref(storage, `uploads/${category}/${Date.now()}_${file.name}`);
-      
-      console.log("Storageへのアップロード開始");
-      const uploadResult = await uploadBytes(storageRef, file);
-      console.log("Storageアップロード完了:", uploadResult);
-      
-      console.log("ダウンロードURL取得開始");
-      const downloadUrl = await getDownloadURL(storageRef);
-      console.log("ダウンロードURL取得完了:", downloadUrl);
-      
-      setUrl(downloadUrl);
-      
-      console.log("Firestoreへの保存開始");
-      await addDoc(collection(firestore, "images"), {
-        url: downloadUrl,
+      // Storageに画像をアップロード
+      const storagePath = `uploads/${file.name}`;
+      const storageRef = ref(storage, storagePath);
+      const snapshot = await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(snapshot.ref);
+
+      // Firestoreにメタデータを保存
+      await addDoc(collection(db, "images"), {
+        url: downloadURL,
+        storagePath,
         category,
-        createdAt: serverTimestamp(),
+        author,
+        createdAt: new Date().toISOString()
       });
-      console.log("Firestoreへの保存完了");
-      
-      setSuccess("アップロード＆登録完了！");
-    } catch (err: any) {
-      console.error("アップロードエラー:", err);
-      setError(`アップロードに失敗しました: ${err.message}`);
+
+      // フォームをリセット
+      setFile(null);
+      setCategory("");
+      setAuthor("");
+      alert("画像のアップロードが完了しました");
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      setError("画像のアップロード中にエラーが発生しました");
     } finally {
-      setUploading(false);
+      setLoading(false);
     }
   };
 
   return (
-    <div className="mb-4">
-      <label className="block mb-2 font-bold">画像アップロード</label>
-      <div className="mb-4">
-        <input 
-          type="file" 
-          accept="image/*" 
-          onChange={handleFileChange} 
-          className="block w-full text-sm text-gray-500
-            file:mr-4 file:py-2 file:px-4
-            file:rounded file:border-0
-            file:text-sm file:font-semibold
-            file:bg-yellow-500 file:text-white
-            hover:file:bg-yellow-600
-            cursor-pointer"
+    <form onSubmit={handleSubmit} className="space-y-4 max-w-md mx-auto">
+      <div>
+        <label className="block text-sm font-bold mb-1 text-gray-900">画像ファイル</label>
+        <input
+          type="file"
+          accept="image/*"
+          onChange={(e) => setFile(e.target.files?.[0] || null)}
+          className="w-full border rounded p-2 text-gray-900 font-bold placeholder-gray-700"
         />
       </div>
-      <div className="mb-2">
-        <label className="mr-2">カテゴリ:</label>
-        <select value={category} onChange={e => setCategory(e.target.value)} className="border rounded px-2 py-1">
+
+      <div>
+        <label className="block text-sm font-bold mb-1 text-gray-900">カテゴリ</label>
+        <select
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+          className="w-full border rounded p-2 text-gray-900 font-bold placeholder-gray-700"
+          required
+        >
+          <option value="">選択してください</option>
           {categories.map(cat => (
             <option key={cat.value} value={cat.value}>{cat.label}</option>
           ))}
         </select>
       </div>
+
+      <div>
+        <label className="block text-sm font-bold mb-1 text-gray-900">作者</label>
+        <input
+          type="text"
+          value={author}
+          onChange={(e) => setAuthor(e.target.value)}
+          className="w-full border rounded p-2 text-gray-900 font-bold placeholder-gray-700"
+          required
+          placeholder="例: 山田太郎"
+        />
+      </div>
+
+      {error && <p className="text-red-500 text-sm font-bold">{error}</p>}
+
       <button
-        onClick={handleUpload}
-        disabled={!file || uploading}
-        className="bg-yellow-500 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
+        type="submit"
+        disabled={loading}
+        className="w-full bg-yellow-500 text-white font-bold py-2 rounded hover:bg-yellow-600 transition-colors disabled:bg-yellow-300 mt-4 mb-2 text-lg"
       >
-        {uploading ? "アップロード中..." : "アップロード"}
+        {loading ? "アップロード中..." : "アップロード"}
       </button>
-      {error && <div className="text-red-500 text-sm mt-2">{error}</div>}
-      {success && <div className="text-green-600 text-sm mt-2">{success}</div>}
-      {url && (
-        <div className="mt-4">
-          <div className="text-xs text-gray-500 mb-1">画像URL:</div>
-          <a href={url} target="_blank" rel="noopener noreferrer" className="underline break-all">{url}</a>
-          <img src={url} alt="uploaded" className="mt-2 max-w-full h-auto rounded shadow" />
-        </div>
-      )}
-    </div>
+    </form>
   );
 } 

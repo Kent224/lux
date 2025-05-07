@@ -1,89 +1,74 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Lightbox from "yet-another-react-lightbox";
 import "yet-another-react-lightbox/styles.css";
-
-const images = [
-  {
-    src: "https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=format&fit=crop&w=800&q=80",
-    alt: "Reel 1",
-    author: "Jakob Owens",
-    url: "https://unsplash.com/photos/0V6C5gJ6y-k",
-  },
-  {
-    src: "https://images.unsplash.com/photo-1465101178521-c1a9136a3b99?auto=format&fit=crop&w=800&q=80",
-    alt: "Reel 2",
-    author: "Matthew Kwong",
-    url: "https://unsplash.com/photos/2zDw14yCYqk",
-  },
-  {
-    src: "https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=800&q=80",
-    alt: "Reel 3",
-    author: "William Iven",
-    url: "https://unsplash.com/photos/SpVHcbuKi6E",
-  },
-  {
-    src: "https://images.unsplash.com/photo-1465101178521-c1a9136a3b99?auto=format&fit=crop&w=800&q=80",
-    alt: "Reel 4",
-    author: "Matthew Kwong",
-    url: "https://unsplash.com/photos/2zDw14yCYqk",
-  },
-  {
-    src: "https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=format&fit=crop&w=800&q=80",
-    alt: "Reel 5",
-    author: "Jakob Owens",
-    url: "https://unsplash.com/photos/0V6C5gJ6y-k",
-  },
-];
+import { useImages } from "@/hooks/useImages";
+import Loader from "../components/Loader";
 
 export default function ReelPage() {
   const [open, setOpen] = useState(false);
   const [index, setIndex] = useState(0);
+  const { images, loading, error } = useImages("reel");
+  const [imagesLoaded, setImagesLoaded] = useState(0);
+  const [minLoadingDone, setMinLoadingDone] = useState(false);
+
+  useEffect(() => {
+    setImagesLoaded(0);
+  }, [images.length]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setMinLoadingDone(true), 1200);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (error) return <div>エラー: {error}</div>;
+  if (images.length === 0 && !loading && minLoadingDone)
+    return (
+      <main className="max-w-5xl mx-auto py-12 px-4 flex items-center justify-center min-h-[60vh]">
+        <div className="text-3xl text-gray-400 font-bold text-center select-none">No photo,</div>
+      </main>
+    );
+
+  const showLoader = !minLoadingDone || loading || imagesLoaded < images.length;
 
   return (
-    <main className="max-w-5xl mx-auto py-12 px-4">
-      <h1 className="text-3xl font-bold mb-8">Reel / Video Works</h1>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-        {images.map((img, i) => (
-          <button
-            key={img.src}
-            className="group relative focus:outline-none"
-            onClick={() => {
-              setIndex(i);
-              setOpen(true);
-            }}
-          >
-            <img
-              src={img.src}
-              alt={img.alt}
-              className="w-full h-60 object-cover rounded shadow hover:scale-105 transition-transform duration-200"
-              loading="lazy"
-            />
-            <span className="absolute bottom-2 left-2 bg-white/80 text-xs px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">
-              Photo by {img.author}
-            </span>
-          </button>
-        ))}
+    <main className="max-w-5xl mx-auto py-12 px-4 relative">
+      {showLoader && <Loader />}
+      <div style={{ opacity: showLoader ? 0 : 1, transition: "opacity 0.3s" }}>
+        <h1 className="text-3xl font-bold mb-8">Reel / Video Works</h1>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          {images.map((img, i) => (
+            <button
+              key={img.id}
+              className="group relative focus:outline-none"
+              onClick={() => {
+                setIndex(i);
+                setOpen(true);
+              }}
+            >
+              <img
+                src={img.src}
+                alt={img.alt}
+                className="w-full h-60 object-cover rounded shadow hover:scale-105 transition-transform duration-200"
+                loading="lazy"
+                onLoad={() => setImagesLoaded((v) => v + 1)}
+                onError={() => setImagesLoaded((v) => v + 1)}
+              />
+              <span className="absolute bottom-2 left-2 bg-white/80 text-xs px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                Photo by {img.author}
+              </span>
+            </button>
+          ))}
+        </div>
+        <Lightbox
+          open={open}
+          close={() => setOpen(false)}
+          slides={images.map((img) => ({ src: img.src, alt: img.alt }))}
+          index={index}
+          on={{ view: ({ index }) => setIndex(index) }}
+        />
       </div>
-      <div className="text-xs text-gray-400 mt-6">
-        Photos from Unsplash. クレジット: {" "}
-        {images.map((img, i) => (
-          <span key={img.url}>
-            <a href={img.url} target="_blank" rel="noopener noreferrer" className="underline">
-              {img.author}
-            </a>
-            {i < images.length - 1 && ", "}
-          </span>
-        ))}
-      </div>
-      <Lightbox
-        open={open}
-        close={() => setOpen(false)}
-        slides={images.map((img) => ({ src: img.src, alt: img.alt }))}
-        index={index}
-        on={{ view: ({ index }) => setIndex(index) }}
-      />
     </main>
   );
 } 
