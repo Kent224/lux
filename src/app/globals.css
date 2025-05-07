@@ -52,3 +52,14 @@ body {
 .nav-underline-link::after {
   display: none;
 }
+
+@keyframes slideInRight {
+  0% {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
