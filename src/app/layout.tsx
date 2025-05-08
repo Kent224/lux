@@ -22,6 +22,10 @@ export default function RootLayout({
   const [menuOpen, setMenuOpen] = useState(false);
   return (
     <html lang="en">
+      <head>
+        <link rel="icon" href="/lux-favicon.webp" type="image/webp" />
+        <link rel="icon" href="/lux-favicon.png" type="image/png" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
